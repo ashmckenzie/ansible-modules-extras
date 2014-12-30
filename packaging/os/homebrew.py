@@ -49,6 +49,11 @@ options:
         required: false
         default: "no"
         choices: [ "yes", "no" ]
+    cache_valid_time:
+        description:
+            - If C(update_homebrew) is specified and the last run is less or equal than I(cache_valid_time) seconds ago, the C(update_homebrew) gets skipped.
+        required: false
+        default: no
     upgrade_all:
         description:
             - upgrade all homebrew packages
@@ -68,6 +73,8 @@ EXAMPLES = '''
 - homebrew: name=foo state=present repository_path=/opt/boxen/homebrew
 - homebrew: name=foo state=present update_homebrew=yes
 - homebrew: name=foo state=latest update_homebrew=yes
+- homebrew: update_homebrew=yes
+- homebrew: update_homebrew=yes cache_valid_time=3600
 - homebrew: update_homebrew=yes upgrade_all=yes
 - homebrew: name=foo state=head
 - homebrew: name=foo state=linked
