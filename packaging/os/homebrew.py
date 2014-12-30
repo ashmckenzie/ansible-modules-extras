@@ -85,6 +85,7 @@ EXAMPLES = '''
 
 import os.path
 import re
+import datetime
 
 
 # exceptions -------------------------------------------------------------- {{{
@@ -485,6 +486,32 @@ class Homebrew(object):
             self.message = err.strip()
             raise HomebrewException(self.message)
     # /updated ------------------------------- }}}
+
+    # _cache_valid --------------------------- {{{
+    def _cache_valid(self):
+        cache_valid = False
+
+        if self.cache_valid_time:
+            tdelta = datetime.timedelta(seconds=self.cache_valid_time)
+            try:
+                head_file = os.path.join(self.repository_path, '.git', 'HEAD')
+                mtime = os.stat(head_file).st_mtime
+            except:
+                mtime = False
+            if mtime is False:
+                # No mtime could be read - looks like lists are not there
+                # We update the cache to be safe
+                cache_valid = False
+            else:
+                mtimestamp = datetime.datetime.fromtimestamp(mtime)
+                if mtimestamp + tdelta >= datetime.datetime.now():
+                    # dont update the cache
+                    # the old cache is less than cache_valid_time seconds old - so still valid
+                    cache_valid = True
+
+        return cache_valid
+
+    # /_cache_valid -------------------------- }}}
 
     # _upgrade_all --------------------------- {{{
     def _upgrade_all(self):
