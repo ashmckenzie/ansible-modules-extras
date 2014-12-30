@@ -310,14 +310,15 @@ class Homebrew(object):
     # /class properties -------------------------------------------- }}}
 
     def __init__(self, module, repository_path=None, path=None, packages=None,
-                 state=None, update_homebrew=False, upgrade_all=False,
-                 install_options=None):
+                 state=None, update_homebrew=False, cache_valid_time=0,
+                 upgrade_all=False, install_options=None):
         if not install_options:
             install_options = list()
         self._setup_status_vars()
         self._setup_instance_vars(module=module, repository_path=repository_path,
                                   path=path, packages=packages, state=state,
                                   update_homebrew=update_homebrew,
+                                  cache_valid_time=cache_valid_time,
                                   upgrade_all=upgrade_all,
                                   install_options=install_options, )
 
@@ -793,6 +794,10 @@ def main():
                 aliases=["update-brew"],
                 type='bool',
             ),
+            cache_valid_time=dict(
+                default=0,
+                type='int'
+            ),
             upgrade_all=dict(
                 default="no",
                 aliases=["upgrade"],
@@ -837,6 +842,7 @@ def main():
         state = 'absent'
 
     update_homebrew = p['update_homebrew']
+    cache_valid_time = p['cache_valid_time']
     upgrade_all = p['upgrade_all']
     p['install_options'] = p['install_options'] or []
     install_options = ['--{0}'.format(install_option)
@@ -844,7 +850,8 @@ def main():
 
     brew = Homebrew(module=module, repository_path=repository_path, path=path,
                     packages=packages, state=state,
-                    update_homebrew=update_homebrew, upgrade_all=upgrade_all,
+                    update_homebrew=update_homebrew,
+                    cache_valid_time=cache_valid_time, upgrade_all=upgrade_all,
                     install_options=install_options)
     (failed, changed, message) = brew.run()
     if failed:
