@@ -38,6 +38,11 @@ options:
         choices: [ 'head', 'latest', 'present', 'absent', 'linked', 'unlinked' ]
         required: false
         default: present
+    repository_path:
+        description:
+            - path of the homebrew repository
+        required: false
+        default: "/usr/local"
     update_homebrew:
         description:
             - update homebrew itself first
@@ -60,6 +65,7 @@ notes:  []
 '''
 EXAMPLES = '''
 - homebrew: name=foo state=present
+- homebrew: name=foo state=present repository_path=/opt/boxen/homebrew
 - homebrew: name=foo state=present update_homebrew=yes
 - homebrew: name=foo state=latest update_homebrew=yes
 - homebrew: update_homebrew=yes upgrade_all=yes
@@ -296,14 +302,15 @@ class Homebrew(object):
             return package
     # /class properties -------------------------------------------- }}}
 
-    def __init__(self, module, path=None, packages=None, state=None,
-                 update_homebrew=False, upgrade_all=False,
+    def __init__(self, module, repository_path=None, path=None, packages=None,
+                 state=None, update_homebrew=False, upgrade_all=False,
                  install_options=None):
         if not install_options:
             install_options = list()
         self._setup_status_vars()
-        self._setup_instance_vars(module=module, path=path, packages=packages,
-                                  state=state, update_homebrew=update_homebrew,
+        self._setup_instance_vars(module=module, repository_path=repository_path,
+                                  path=path, packages=packages, state=state,
+                                  update_homebrew=update_homebrew,
                                   upgrade_all=upgrade_all,
                                   install_options=install_options, )
 
@@ -327,7 +334,7 @@ class Homebrew(object):
 
     def _prep_path(self):
         if not self.path:
-            self.path = ['/usr/local/bin']
+            self.path = [os.path.join(self.repository_path, 'bin')]
 
     def _prep_brew_path(self):
         if not self.module:
@@ -760,6 +767,10 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             name=dict(aliases=["pkg"], required=False),
+            repository_path=dict(
+                default="/usr/local",
+                required=False
+            ),
             path=dict(required=False),
             state=dict(
                 default="present",
@@ -795,11 +806,14 @@ def main():
     else:
         packages = None
 
+    repository_path = p['repository_path']
+
     path = p['path']
+
     if path:
         path = path.split(':')
     else:
-        path = ['/usr/local/bin']
+        path = [os.path.join(repository_path, 'bin')]
 
     state = p['state']
     if state in ('present', 'installed'):
@@ -821,9 +835,10 @@ def main():
     install_options = ['--{0}'.format(install_option)
                        for install_option in p['install_options']]
 
-    brew = Homebrew(module=module, path=path, packages=packages,
-                    state=state, update_homebrew=update_homebrew,
-                    upgrade_all=upgrade_all, install_options=install_options)
+    brew = Homebrew(module=module, repository_path=repository_path, path=path,
+                    packages=packages, state=state,
+                    update_homebrew=update_homebrew, upgrade_all=upgrade_all,
+                    install_options=install_options)
     (failed, changed, message) = brew.run()
     if failed:
         module.fail_json(msg=message)
