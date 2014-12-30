@@ -463,6 +463,10 @@ class Homebrew(object):
 
     # updated -------------------------------- {{{
     def _update_homebrew(self):
+        if self._cache_valid():
+            self.message = 'Homebrew already up-to-date (within cache valid time).'
+            return True
+
         rc, out, err = self.module.run_command([
             self.brew_path,
             'update',
